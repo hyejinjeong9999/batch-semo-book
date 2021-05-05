@@ -1,6 +1,7 @@
 package com.semobook.domain;
 
 import lombok.Builder;
+import lombok.Data;
 import lombok.Getter;
 
 import javax.persistence.Column;
@@ -11,21 +12,31 @@ import java.time.LocalDate;
 
 @Entity
 @Getter
+@Data
 public class User {
     @Id
     @GeneratedValue
-    private Long id;
+    private Long no;
 
     @Column
-    private String name;
+    private String userName;
+
+    @Column
+    private String userStatus;
 
     @Column
     private LocalDate lastConnection;
 
     @Builder
-    public User(Long id, String name, LocalDate lastConnection){
-        this.name = name;
+    public User(String userName,String userStatus, LocalDate lastConnection){
+        this.userName = userName;
+        this.userStatus = userStatus;
         this.lastConnection = lastConnection;
+    }
+
+    public User setIncative(){
+        this.setUserStatus("INACTIVE");
+        return this;
     }
 
     public User() {
