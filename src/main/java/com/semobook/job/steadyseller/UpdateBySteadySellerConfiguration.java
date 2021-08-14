@@ -1,7 +1,7 @@
-package com.semobook.job;
+package com.semobook.job.steadyseller;
 
-import com.semobook.domain.bestseller.RecomBestSeller;
-import com.semobook.repository.BestSellerRepository;
+import com.semobook.domain.steadyseller.RecomSteadySeller;
+import com.semobook.repository.SteadySellerRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
@@ -13,25 +13,22 @@ import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
 import org.springframework.batch.repeat.RepeatStatus;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import javax.persistence.EntityManagerFactory;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-//read process write - chunk
 @Slf4j
 @RequiredArgsConstructor
-@Configuration  //Spring Batch의 모든 Job은 @Configuration으로 등록해서 사용
-public class UpdateByBestSellerConfiguration {
-    private static final String JOB_NAME = "UpdateByBestSellerConfiguration";
-    private static String KOBO_BEST_DATA_URL = "http://www.kyobobook.co.kr/bestSellerNew/bestseller.laf?mallGb=KOR&linkClass=";
-    private String[] bookTypeList = {"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "Q", "R", "S", "T", "U", "V", "a", "b", "c", "d", "e", "f", "g", "08"};
+@Configuration
+public class UpdateBySteadySellerConfiguration {
+    private static final String JOB_NAME = "UpdateBySteadySellerConfiguration";
+    private static String KOBO_STEADY_DATA_URL = "http://www.kyobobook.co.kr/bestSellerNew/steadyseller.laf?mallGb=KOR&linkClass=";
+    String[] bookTypeList = {"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "Q", "R", "S", "T", "U", "V", "a", "b", "c", "d", "e", "f", "g", "08"};
     String[] cate = {"A", "100", "200", "300", "400", "500", "600", "700", "800", "900"};
     public static final Map<String, String> CATEGORY_TYPE_MAP = new HashMap<String, String>() {
         {
@@ -62,54 +59,50 @@ public class UpdateByBestSellerConfiguration {
             put("e", "100");
             put("f", "800");
             put("g", "800");
-
         }
     };
-    private List<RecomBestSeller> bestSellerList;
 
+    private List<RecomSteadySeller> steadySellerList;
     private final JobBuilderFactory jobBuilderFactory;
     private final StepBuilderFactory stepBuilderFactory;
-    private final EntityManagerFactory entityManagerFactory;
-    private final BestSellerRepository bestSellerRepository;
+    private final SteadySellerRepository steadySellerRepository;
 
     @Bean
-    public Job bestSellerJob() throws Exception {
-        log.info("Start bestSellerJob");
-        return jobBuilderFactory.get(JOB_NAME)
-                .start(bestSellerBatchStep())
-                .build();
-
+    public Job steadySellerJob() {
+      log.info("Start steadySellerJob");
+      return jobBuilderFactory.get(JOB_NAME)
+              .start(steadySellerStep())
+              .build();
     }
-
     @Bean
-    public Step bestSellerBatchStep() {
-        return stepBuilderFactory.get("bestSellerBatchStep")
-                //contribution - 현재 단계 실행을 업데이트하기 위해 다시 전달되는 변경 가능한 상태
-                // chunkContext - 호출 간에는 공유되지만 재시작 간에는 공유되지 않는 속성
+    public Step steadySellerStep() {
+        return stepBuilderFactory.get("steadySellerStep")
                 .tasklet((contribution, chunkContext) -> {
-                    bestSellerBatch();
-                    saveBestSeller();
+                    steadySellerBatch();
+                    saveSteadySeller();
                     return RepeatStatus.FINISHED;
                 })
                 .build();
     }
+
     /**
      * crawling book data
      *
      * @author hyunho
      * @since 2021/08/14
-     **/
-    private void bestSellerBatch() {
-        bestSellerList = new ArrayList<>();
+    **/
+    private void steadySellerBatch() {
+        steadySellerList = new ArrayList<>();
         Map<String, Integer> categoryIndex = new HashMap<>();
-        for (int i = 0; i < cate.length; i++) {
+        for (int i = 0; i <cate.length; i++) {
             categoryIndex.put(cate[i], 1);
         }
-        log.info("BEST SELLER-----");
+
+        log.info("STEADY SELLER-----");
         for (String s : bookTypeList) {
 
             String bestUrl = "";
-            bestUrl = KOBO_BEST_DATA_URL + s;
+            bestUrl = KOBO_STEADY_DATA_URL + s;
 
             Document doc = null;
             try {
@@ -127,7 +120,6 @@ public class UpdateByBestSellerConfiguration {
                     Document detailDocument = Jsoup.connect(elementResult).get();
 
                     //ISBN//
-                    //Get input tag value (https://stackoverflow.com/questions/46172863/how-to-get-value-of-a-input-field-in-jsoup-in-java)
                     Element elem = Jsoup.parse(String.valueOf(detailDocument.select("#proForm_barcode"))).getElementById("proForm_barcode");
                     String isbn = elem.attr("value");
                     //TITLE CATEGORY//
@@ -146,10 +138,10 @@ public class UpdateByBestSellerConfiguration {
                     String publisher = resultList[resultList.length - 1];
                     //IMAGE//
                     String imgPath = String.valueOf(detailDocument.select("#container > div:nth-child(4) > form > div.box_detail_info > div.box_detail_cover > div > a > img").attr("src"));
-                    String category = CATEGORY_TYPE_MAP.get(s);
+                    String category =  CATEGORY_TYPE_MAP.get(s);
                     int idx = categoryIndex.get(category);
-                    bestSellerList.add(RecomBestSeller.builder()
-                            .rank(category + "_" + idx)
+                    RecomSteadySeller bookData = RecomSteadySeller.builder()
+                            .rank(category + "_" +idx )
                             .isbn(isbn)
                             .bookName(title)
                             .author(author)
@@ -158,23 +150,26 @@ public class UpdateByBestSellerConfiguration {
                             .category(category)
                             .keyword(detailCategory)
                             .img(imgPath)
-                            .build());
-                    categoryIndex.put(category, idx + 1);
+                            .build();
+                    steadySellerList.add(bookData);
+                    categoryIndex.put(category,idx+1);
                     log.info("ISBN = " + isbn + " / BOON NAME = " + title + " / author = " + author + " / publisher = " + publisher + " / imgPath = " + imgPath + " / TITLE CATEGORY = " + titleCategory + " / DETAIL CATEGORY = " + detailCategory);
                 } catch (Exception e) {
-                    log.error("getBestSellerData() err :: error msg : {}", e);
+                    log.error("getBestSellerDa`ta() err :: error msg : {}", e);
                 }
             }
         }
     }
 
     /**
-     * ave book data
+     * save book data
      *
      * @author hyunho
      * @since 2021/08/14
-     **/
-    private void saveBestSeller() {
-        bestSellerList.stream().forEach(recomBestSeller -> bestSellerRepository.save(recomBestSeller));
+    **/
+    private void saveSteadySeller() {
+        log.info("saveSteadySeller saveSteadySeller size is = {}", steadySellerList.size());
+        steadySellerList.stream().forEach(recomSteadySeller -> steadySellerRepository.save(recomSteadySeller));
     }
+
 }

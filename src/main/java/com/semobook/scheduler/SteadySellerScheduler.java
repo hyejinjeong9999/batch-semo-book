@@ -1,6 +1,6 @@
 package com.semobook.scheduler;
 
-import com.semobook.job.bestseller.UpdateByBestSellerConfiguration;
+import com.semobook.job.steadyseller.UpdateBySteadySellerConfiguration;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.JobExecution;
@@ -16,16 +16,16 @@ import java.util.Map;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class BestSellerScheduler {
+public class SteadySellerScheduler {
     private final JobLauncher jobLauncher;
-    private final UpdateByBestSellerConfiguration updateByBestSellerConfiguration;
+    private final UpdateBySteadySellerConfiguration updateBySteadySellerConfiguration;
 
-//    @Scheduled(initialDelay = 1000, fixedDelay = 1000 * 60)
-    public void updateByBestSellerJob() {
+    @Scheduled(initialDelay = 1000, fixedDelay = 1000 * 60)
+    public void updateBySteadySellerJob(){
         JobExecution execution;
         try {
-            log.info("start updateByBestSellerJob");
-            execution = jobLauncher.run(updateByBestSellerConfiguration.bestSellerJob(), simpleJobParam());
+            log.info("start updateBySteadySellerJob");
+            execution = jobLauncher.run(updateBySteadySellerConfiguration.steadySellerJob(), simpleJobParam());
             log.info("Job finished with status : " + execution.getStatus());
             log.info("Current Thread: {}", Thread.currentThread().getName());
         } catch (Exception e) {
@@ -34,7 +34,6 @@ public class BestSellerScheduler {
         }
     }
 
-    //같은 이름의 batch는 생길 수 없기 때문에 param에 시간을 넣는다.
     private JobParameters simpleJobParam() {
         Map<String, JobParameter> confMap = new HashMap<>();
         confMap.put("time", new JobParameter(System.currentTimeMillis()));
