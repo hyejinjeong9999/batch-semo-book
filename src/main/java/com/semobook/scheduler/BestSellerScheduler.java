@@ -21,6 +21,7 @@ public class BestSellerScheduler {
     private final UpdateByBestSellerConfiguration updateByBestSellerConfiguration;
 
 //    @Scheduled(initialDelay = 1000, fixedDelay = 1000 * 60)
+@Scheduled(cron = "0 30 1 * * ?", zone = "Asia/Seoul")
     public void updateByBestSellerJob() {
         JobExecution execution;
         try {

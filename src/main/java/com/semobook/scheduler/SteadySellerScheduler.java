@@ -20,7 +20,8 @@ public class SteadySellerScheduler {
     private final JobLauncher jobLauncher;
     private final UpdateBySteadySellerConfiguration updateBySteadySellerConfiguration;
 
-    @Scheduled(initialDelay = 1000, fixedDelay = 1000 * 60)
+//    @Scheduled(initialDelay = 1000, fixedDelay = 1000 * 60) //TEST
+    @Scheduled(cron = "0 0 1 * * ?", zone = "Asia/Seoul")
     public void updateBySteadySellerJob(){
         JobExecution execution;
         try {
