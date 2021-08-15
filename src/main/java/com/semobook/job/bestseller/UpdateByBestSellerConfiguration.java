@@ -89,9 +89,19 @@ public class UpdateByBestSellerConfiguration {
                 .tasklet((contribution, chunkContext) -> {
                     bestSellerBatch();
                     saveBestSeller();
+//                    startBatch();
+//                    endBatch();
                     return RepeatStatus.FINISHED;
                 })
                 .build();
+    }
+
+    private void startBatch() {
+        log.info("This is startBatch----------");
+    }
+
+    private void endBatch() {
+        log.info("This is endBatch----------");
     }
     /**
      * crawling book data
@@ -108,7 +118,7 @@ public class UpdateByBestSellerConfiguration {
         log.info("BEST SELLER-----");
         for (String s : bookTypeList) {
 
-            String bestUrl = "";
+            String bestUrl;
             bestUrl = KOBO_BEST_DATA_URL + s;
 
             Document doc = null;
