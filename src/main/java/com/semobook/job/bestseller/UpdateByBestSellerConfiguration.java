@@ -89,20 +89,11 @@ public class UpdateByBestSellerConfiguration {
                 .tasklet((contribution, chunkContext) -> {
                     bestSellerBatch();
                     saveBestSeller();
-//                    startBatch();
-//                    endBatch();
                     return RepeatStatus.FINISHED;
                 })
                 .build();
     }
 
-    private void startBatch() {
-        log.info("This is startBatch----------");
-    }
-
-    private void endBatch() {
-        log.info("This is endBatch----------");
-    }
     /**
      * crawling book data
      *
