@@ -1,5 +1,6 @@
-package com.semobook.domain;
+package com.semobook.domain.book;
 
+import com.semobook.domain.BookReview;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
