@@ -41,7 +41,6 @@ public class Book {
     @Column(name = "BOOK_IMAGE")
     private String img;
 
-//    @JsonIgnore //bookReviewList 를 호회하지 않는다..... 쓰면 좋지 않다..... 쓰지마라
     @OneToMany(mappedBy = "book", cascade = CascadeType.ALL)
     private List<BookReview> bookReviewList = new ArrayList<>();
 
@@ -57,5 +56,15 @@ public class Book {
         this.keyword = keyword;
         this.img = img;
         this.contents = contents;
+    }
+
+    /**
+     * update kdc
+     *
+     * @author hyunho
+     * @since 2021/08/23
+    **/
+    public void updateKdc(String kdc){
+        this.kdc = kdc;
     }
 }

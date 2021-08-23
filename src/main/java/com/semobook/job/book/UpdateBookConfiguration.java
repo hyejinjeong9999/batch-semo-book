@@ -40,7 +40,6 @@ public class UpdateBookConfiguration {
     }
 
     @Bean
-    @JobScope
     public Step jpaBookItemReaderStep() {
         return stepBuilderFactory.get("jpaBookItemReaderStep")
                 .<Book, Book>chunk(chunkSize)
@@ -51,20 +50,30 @@ public class UpdateBookConfiguration {
     }
 
     @Bean
-    @StepScope
     public JpaPagingItemReader<Book> jpaBookItemReader() {
         return new JpaPagingItemReaderBuilder<Book>()
                 .name("jpaBookItemReader")
                 .entityManagerFactory(entityManagerFactory)
                 .pageSize(chunkSize)
-                .queryString("select b form Book b where b.kdc is null")
+                .queryString("select b from Book b where b.kdc is null")
                 .build();
     }
 
+    @Bean
     public ItemProcessor<Book, Book> updateBook() {
-        return null;
+        return item -> {
+//            item.updateKdc("");
+            log.info("updateBook() :: book list = {}",item.getBookName());
+            return item;
+        };
     }
+
     public ItemWriter<Book> jpaItemWriter() {
-        return null;
+        log.info("jpaItemWriter ::");
+        return list -> {
+            for (Book book : list) {
+                log.info("jpaItemWriter() :: book list = {}",book.getBookName());
+            }
+        };
     }
 }

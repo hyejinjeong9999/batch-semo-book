@@ -30,7 +30,9 @@ public class BookTest {
         //give
 
         //when
-        List<Book> bookList = bookRepository.findByNullKdc();
+//        Book book = bookRepository.findByIsbn("1111");
+//        log.info("book is = {}",book.getBookName());
+//        List<Book> bookList = bookRepository.findByNullKdc();
 //        log.info("book list count is = {}",bookList.size());
         //then
 
