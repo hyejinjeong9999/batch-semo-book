@@ -20,7 +20,8 @@ public class BookScheduler {
     private final JobLauncher jobLauncher;
     private final UpdateBookConfiguration updateBookConfiguration;
 
-    @Scheduled(initialDelay = 1000, fixedDelay = 1000 * 60)
+//    @Scheduled(initialDelay = 1000, fixedDelay = 1000 * 60)
+    @Scheduled(cron = "0 0 2 * * ?", zone = "Asia/Seoul")
     public void updateBookJob(){
         JobExecution execution;
         try {
