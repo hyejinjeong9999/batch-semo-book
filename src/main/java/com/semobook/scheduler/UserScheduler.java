@@ -24,7 +24,7 @@ public class UserScheduler {
     private final UpdateRecomBasedUserInfoConfiguration updateRecomBasedUserInfoConfiguration;
     private final UpdateRecomByBookConfiguration updateRecomByBookConfiguration;
 
-//    @Scheduled(initialDelay = 1000, fixedDelay = 1000*60) //test -
+    @Scheduled(initialDelay = 1000, fixedDelay = 1000*60) //test -
 //    @Scheduled(cron = "0 40 1 * * ?") 매일 한시 사십분에 돌린다
     public void updateRecomBasedUserInfoJob () {
         JobExecution execution;

@@ -1,28 +1,28 @@
 package com.semobook.job;
 
 import com.semobook.domain.Book;
+import com.semobook.domain.BookReview;
 import com.semobook.domain.RecomByUserInfo;
 import com.semobook.domain.UserInfo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.batch.core.*;
+import org.springframework.batch.core.Job;
+import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.JobScope;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.ItemWriter;
+import org.springframework.batch.item.database.JpaItemWriter;
 import org.springframework.batch.item.database.JpaPagingItemReader;
 import org.springframework.batch.item.database.builder.JpaPagingItemReaderBuilder;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import javax.persistence.EntityManagerFactory;
-import javax.persistence.criteria.CriteriaBuilder;
 import java.util.*;
+import java.util.stream.Collectors;
 
 
 /**
@@ -58,26 +58,24 @@ public class UpdateRecomBasedUserInfoConfiguration {
     @Bean
     public Job updateRecomBasedUserInfoJob() throws Exception {
         return jobBuilderFactory.get(JOB_NAME)
-                .start(jpaPagingItemReaderStep()) //성별별 책 정보 가져오기
+                .start(jpaPagingItemReaderStep("F")) //성별별 책 정보 가져오기
+                .next(jpaPagingItemReaderStep("M")) //성별별 책 정보 가져오기
                 .build();
 
     }
 
     //step에서는 read, process, writer를 할 수 있음
     //그 외에도 before read 그런 것도 있음..
-    @Bean
     @JobScope
-    public Step jpaPagingItemReaderStep() {
+    public Step jpaPagingItemReaderStep(String gender) {
         return stepBuilderFactory.get("jpaPagingItemReaderStep")
-                .<UserInfo, UserInfo>chunk(chunkSize)
+                .<UserInfo, RecomByUserInfo>chunk(chunkSize)
                 .reader(jpaPagingItemReader())
-                .processor(makeRecom())
+                .processor(makeRecom(gender))
                 .writer(jpaPagingItemWriter())
                 .build();
     }
 
-    @Bean
-    @StepScope
     public JpaPagingItemReader<UserInfo> jpaPagingItemReader() {
         return new JpaPagingItemReaderBuilder<UserInfo>()
                 .name("jpaPagingItemReader")
@@ -88,44 +86,72 @@ public class UpdateRecomBasedUserInfoConfiguration {
                 .build();
     }
 
-    @Bean
-    @StepScope
-    public ItemProcessor<UserInfo, UserInfo> makeRecom() {
+    //ItemProcessor<읽어올 타입, 쓸 타입>
+    public ItemProcessor<UserInfo, RecomByUserInfo> makeRecom(String gender) {
         return item -> {
+            log.info("gender is " + gender);
+            log.info("================ItemProcessor====================");
             //남자 Map
             Map<String, Integer> manMap = new HashMap<>();
-            if(item.getUserGender() == "M"){
-                manMap.put("M", manMap.getOrDefault("M", 0) + 1);
+            RecomByUserInfo result = new RecomByUserInfo();
+            log.info(item.getUserId());
+            log.info(item.getUserGender());
+            if (item.getUserGender().equals(gender)) {
+                List<BookReview> reviewList = item.getBookReviews();
+                List<Book> bookList = reviewList.stream().map(a -> a.getBook()).collect(Collectors.toList());
+
+                //isbn별 개수 입력
+                for (Book book : bookList) {
+                    manMap.put(book.getIsbn(), manMap.getOrDefault(book.getIsbn(), 0) + 1);
+                }
+
+                //개수별 정렬
+                List<String> manSortKey = new ArrayList<>(manMap.keySet());
+                Collections.sort(manSortKey, (o1, o2) -> manMap.get(o2).compareTo(manMap.get(o1)));
+
+                StringBuilder isbnSb = new StringBuilder();
+
+                int totalCnt = manSortKey.size()<10?manSortKey.size():10;
+                for (int i = 0; i < totalCnt; i++) {
+                    isbnSb.append(manSortKey.get(i));
+                    isbnSb.append("|");
+                }
+                //마지막 | 제거
+                isbnSb.setLength(isbnSb.length() - 1);
+
+                String isbn = isbnSb.toString();
+                result = RecomByUserInfo.builder().recomNo(gender).isbn(isbn).build();
+
             }
+//
+//            List<String> manSortKey = new ArrayList<>(manMap.keySet());
+//            Collections.sort(manSortKey, (o1, o2) -> manMap.get(o2).compareTo(manMap.get(o1)));
+//
+//            Map<String, Integer> womanMap = new HashMap<>();
+//
+//            if (item.getUserGender() == "W") {
+//                womanMap.put("W", womanMap.getOrDefault("W", 0) + 1);
+//            }
+//
+//            List<String> womanSortKey = new ArrayList<>(manMap.keySet());
+//            Collections.sort(womanSortKey, (o1, o2) -> manMap.get(o2).compareTo(manMap.get(o1)));
+//
+//            //여자 Map
 
-            List<String> manSortKey = new ArrayList<>(manMap.keySet());
-            Collections.sort(manSortKey, (o1, o2) -> manMap.get(o2).compareTo(manMap.get(o1)));
-
-            Map<String, Integer> womanMap = new HashMap<>();
-
-            if(item.getUserGender() == "W"){
-                womanMap.put("W", womanMap.getOrDefault("W", 0) + 1);
-            }
-
-            List<String> womanSortKey = new ArrayList<>(manMap.keySet());
-            Collections.sort(womanSortKey, (o1, o2) -> manMap.get(o2).compareTo(manMap.get(o1)));
-
-            //여자 Map
-
-
-            return item;
+            if (result.getRecomNo() == null) return null;
+            return result;
         };
     }
 
-
-    private ItemWriter<UserInfo> jpaPagingItemWriter() {
-        return list -> {
-            for (UserInfo u : list) {
-                log.info("Current Pay={}", u.getBookReviews().size());
-            }
-        };
+    public JpaItemWriter<RecomByUserInfo> jpaPagingItemWriter() {
+        log.info("================ItemWriter====================");
+        JpaItemWriter<RecomByUserInfo> jpaItemWriter = new JpaItemWriter<>();
+        jpaItemWriter.setEntityManagerFactory(entityManagerFactory);
+        return jpaItemWriter;
     }
+
 }
+
 
 
 

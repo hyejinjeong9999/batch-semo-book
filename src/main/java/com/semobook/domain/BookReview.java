@@ -47,4 +47,5 @@ public class BookReview {
         this.rating = rating;
         this.reviewContents = reviewContents;
     }
+
 }
