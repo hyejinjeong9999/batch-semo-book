@@ -1,5 +1,6 @@
 package com.semobook.scheduler;
 
+import com.semobook.aop.TimeCheck;
 import com.semobook.job.book.UpdateBookConfiguration;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,8 +21,9 @@ public class BookScheduler {
     private final JobLauncher jobLauncher;
     private final UpdateBookConfiguration updateBookConfiguration;
 
-//    @Scheduled(initialDelay = 1000, fixedDelay = 1000 * 60)
-    @Scheduled(cron = "0 0 2 * * ?", zone = "Asia/Seoul")
+    @Scheduled(initialDelay = 1000, fixedDelay = 1000 * 60)
+//    @Scheduled(cron = "0 0 2 * * ?", zone = "Asia/Seoul")
+    @TimeCheck
     public void updateBookJob(){
         JobExecution execution;
         try {

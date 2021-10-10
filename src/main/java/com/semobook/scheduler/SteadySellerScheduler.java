@@ -1,5 +1,6 @@
 package com.semobook.scheduler;
 
+import com.semobook.aop.TimeCheck;
 import com.semobook.job.steadyseller.UpdateBySteadySellerConfiguration;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +23,7 @@ public class SteadySellerScheduler {
 
 //    @Scheduled(initialDelay = 1000, fixedDelay = 1000 * 60) //TEST
     @Scheduled(cron = "0 0 1 * * ?", zone = "Asia/Seoul")
+    @TimeCheck
     public void updateBySteadySellerJob(){
         JobExecution execution;
         try {
